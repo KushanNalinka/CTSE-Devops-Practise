@@ -1,0 +1,80 @@
+name: Build & Deploy to ECS Fargate
+
+# Trigger on pushes to main (or change to your branch)
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-east-1                # ← adjust to your region
+  CLUSTER: microservices       # ← your ECS cluster name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - name: gateway
+            path: Gateway
+            taskdef: gateway-taskdef
+            service: gateway-service
+          - name: it21310546
+            path: IT21310546
+            taskdef: it21310546-taskdef
+            service: it21310546-service
+          - name: it21311772
+            path: IT21311772
+            taskdef: it21311772-taskdef
+            service: it21311772-service
+          - name: it21467448
+            path: IT21467448
+            taskdef: it21467448-taskdef
+            service: it21467448-service
+          - name: it21894510
+            path: IT21894510
+            taskdef: it21894510-taskdef
+            service: it21894510-service
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push Docker image
+        run: |
+          # build image
+          cd ${{ matrix.service.path }}
+          docker build -t ${{ matrix.service.name }} .
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${{ matrix.service.name }}:latest
+          docker tag ${{ matrix.service.name }}:latest $IMAGE_URI
+          docker push $IMAGE_URI
+          echo "::set-output name=image::$IMAGE_URI"
+        shell: bash
+        id: build-image
+
+      - name: Render new ECS task definition
+        id: render-taskdef
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ matrix.service.taskdef }}.json
+          container-name:  ${{ matrix.service.name }}
+          image:           ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy to ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition:       ${{ steps.render-taskdef.outputs.task-definition }}
+          service:               ${{ matrix.service.service }}
+          cluster:               ${{ env.CLUSTER }}
+          wait-for-service-stability: true
