@@ -1,0 +1,19 @@
+{
+    "family": "it21311772-taskdef",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "512",
+    "memory": "1024",
+    "executionRoleArn": "arn:aws:iam::952247584776:role/ecsTaskExecutionRole",
+    "containerDefinitions": [
+      {
+        "name": "it21311772",
+        "image": "PLACEHOLDER",
+        "essential": true,
+        "portMappings": [
+          { "containerPort": 5000, "protocol": "tcp" }
+        ]
+      }
+    ]
+  }
+  
