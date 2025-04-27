@@ -67,7 +67,7 @@ jobs:
         id: render-taskdef
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: ${{ matrix.service.taskdef }}.json
+          task-definition: ecs/${{ matrix.service.taskdef }}.json
           container-name:  ${{ matrix.service.name }}
           image:           ${{ steps.build-image.outputs.image }}
 
