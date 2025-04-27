@@ -8,7 +8,8 @@ import cors from 'cors';
 import express from 'express';
 import verifyJWT from './Middlewares/verifyJWT.js';
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
+
 import connectDB from './Config/dbConn.js';
 
 // Auth Routes
